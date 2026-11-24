@@ -1,0 +1,6 @@
+*.conf
+.DS_Store
+__pycache__/
+package/mount-share
+*.command
+SHA256SUMS.txt
