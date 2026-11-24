@@ -26,21 +26,22 @@ fi
 /bin/chmod 700 "$BASE"
 # An existing copy is replaced only after the payload was unpacked and verified.
 /bin/launchctl bootout "gui/$UID/$LABEL" >/dev/null 2>&1 || true
-for name in mount-share reconnect.sh uninstall.sh control.sh; do
+for name in mount-share network-listener reconnect.sh uninstall.sh control.sh; do
     /bin/cp "$SOURCE/$name" "$BASE/$name"
     /bin/chmod 700 "$BASE/$name"
 done
 printf '%s %s %s %s %s\n' "$host" "$nas_mac" "$router" "$router_mac" "$share" > "$BASE/network.conf"
 printf '%s\n' "$nas_user" > "$BASE/username"
-printf '%s\n' '2.1.1' > "$BASE/version"
+printf '%s\n' '2.2.0' > "$BASE/version"
 /bin/rm -f "$BASE/retry-state" "$BASE/retry-after"
 # plutil writes paths without interpolating them into XML or shell code.
 /usr/bin/plutil -create xml1 "$PLIST.new"
 /usr/bin/plutil -insert Label -string "$LABEL" "$PLIST.new"
-/usr/bin/plutil -insert ProgramArguments -json '["/bin/sh"]' "$PLIST.new"
+/usr/bin/plutil -insert ProgramArguments -json '[]' "$PLIST.new"
+/usr/bin/plutil -insert ProgramArguments.0 -string "$BASE/network-listener" "$PLIST.new"
 /usr/bin/plutil -insert ProgramArguments.1 -string "$BASE/reconnect.sh" "$PLIST.new"
 /usr/bin/plutil -insert RunAtLoad -bool YES "$PLIST.new"
-/usr/bin/plutil -insert StartInterval -integer 60 "$PLIST.new"
+/usr/bin/plutil -insert KeepAlive -json '{"SuccessfulExit":false}' "$PLIST.new"
 /usr/bin/plutil -insert LimitLoadToSessionType -string Aqua "$PLIST.new"
 /usr/bin/plutil -insert ProcessType -string Background "$PLIST.new"
 /usr/bin/plutil -insert LowPriorityIO -bool YES "$PLIST.new"
@@ -48,7 +49,7 @@ printf '%s\n' '2.1.1' > "$BASE/version"
 /bin/mv "$PLIST.new" "$PLIST"
 /bin/launchctl enable "gui/$UID/$LABEL"
 /bin/launchctl bootstrap "gui/$UID" "$PLIST"
-printf '\n已安装：每 60 秒轻量检查，回公司后自动连接。\n账号：%s\n' "$nas_user"
+printf '\n已安装：已启用网络变化监听，登录和唤醒时也会检查。\n账号：%s\n' "$nas_user"
 printf '首次使用：请在访达连接 公司 NAS，用自己的账号登录并勾选记住密码。\n'
 printf '已经保存过密码的电脑不需要重复登录。后台不读取或保存明文密码。\n'
 printf '卸载命令：/bin/bash "$HOME/Library/Application Support/CompanyNASAutoMount/uninstall.sh"\n'

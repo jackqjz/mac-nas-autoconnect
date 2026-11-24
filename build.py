@@ -7,11 +7,20 @@ import subprocess
 import tarfile
 
 root = Path(__file__).resolve().parent
-subprocess.run(['xcrun', 'clang', '-O2', '-Wall', '-Wextra', '-arch', 'arm64', '-arch', 'x86_64',
-                '-mmacosx-version-min=11.0', str(root / 'src/mount-share.c'), '-framework', 'CoreFoundation',
-                '-framework', 'NetFS', '-o', str(root / 'package/mount-share')], check=True)
-subprocess.run(['/usr/bin/codesign', '--force', '--sign', '-', str(root / 'package/mount-share')], check=True)
-subprocess.run(['/usr/bin/codesign', '--verify', '--strict', '--all-architectures', str(root / 'package/mount-share')], check=True)
+for binary, source, frameworks in [
+    ('mount-share', 'mount-share.c', ['CoreFoundation', 'NetFS']),
+    ('network-listener', 'network-listener.m', ['AppKit', 'SystemConfiguration']),
+]:
+    output = str(root / 'package' / binary)
+    args = ['xcrun', 'clang', '-O2', '-Wall', '-Wextra', '-arch', 'arm64', '-arch', 'x86_64',
+            '-mmacosx-version-min=11.0']
+    if source.endswith('.m'):
+        args.append('-fobjc-arc')
+    for framework in frameworks:
+        args.extend(['-framework', framework])
+    subprocess.run([*args, str(root / 'src' / source), '-o', output], check=True)
+    subprocess.run(['codesign', '--force', '--sign', '-', output], check=True)
+    subprocess.run(['codesign', '--verify', '--strict', '--all-architectures', output], check=True)
 buffer = io.BytesIO()
 with tarfile.open(fileobj=buffer, mode='w:gz') as archive:
     for path in sorted((root / 'package').iterdir()):
@@ -19,7 +28,7 @@ with tarfile.open(fileobj=buffer, mode='w:gz') as archive:
 payload = buffer.getvalue()
 digest = hashlib.sha256(payload).hexdigest()
 header = '''#!/bin/bash
-# Company NAS Auto Connect 2.1.1. No sudo, no password in this installer.
+# Company NAS Auto Connect 2.2.0. No sudo, no password in this installer.
 set -euo pipefail
 umask 077
 if [[ "$(/usr/bin/uname -s)" != Darwin || "$EUID" = 0 ]]; then

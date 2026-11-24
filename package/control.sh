@@ -32,7 +32,7 @@ case "$MODE" in
             /bin/launchctl bootstrap "gui/$UID" "$PLIST"
         fi
         /bin/launchctl print "$TARGET" >/dev/null
-        printf '自动连接已恢复，到公司后通常 60 秒内连接。\n'
+        printf '自动连接已恢复，已开始监听网络变化。\n'
         ;;
     uninstall)
         stop_task
@@ -40,7 +40,7 @@ case "$MODE" in
         /bin/launchctl enable "$TARGET" >/dev/null 2>&1 || true
         /bin/rm -f -- "$PLIST" "$PLIST.new"
         # Enumerate known generated files; never recursively delete arbitrary content.
-        for name in mount-share mount-share.c reconnect.sh uninstall.sh control.sh username network.conf version \
+        for name in network-listener mount-share mount-share.c reconnect.sh uninstall.sh control.sh username network.conf version \
                     status status-updated last-mount-result retry-after retry-state README.md; do
             /bin/rm -f -- "$BASE/$name"
         done

@@ -1,6 +1,6 @@
 # Mac NAS 自动连接
 
-员工请使用管理员提供的一页说明。首次在访达连接公司的 SMB 共享，并在钥匙串中记住自己的密码。安装程序可以从 [v2.1.1 发布页](https://github.com/jackqjz/mac-nas-autoconnect/releases/tag/v2.1.1) 下载。
+员工请使用管理员提供的一页说明。首次在访达连接公司的 SMB 共享，并在钥匙串中记住自己的密码。安装程序可以从 [v2.2.0 发布页](https://github.com/jackqjz/mac-nas-autoconnect/releases/tag/v2.2.0) 下载。
 
 在终端运行安装文件，传入公司提供的配置文件路径，随后按提示输入自己的 NAS 登录名。
 
@@ -14,7 +14,7 @@
 /bin/bash "$HOME/Library/Application Support/CompanyNASAutoMount/uninstall.sh"
 ```
 
-用户登录后，launchd 每 60 秒运行一次检查。已有共享挂载时立即退出。待连接时检查本机网络信息，在公司网络上确认 NAS 身份后由 macOS NetFS 连接。网络失败时重试间隔逐渐延长至 15 分钟。Mac 休眠期间程序不会主动唤醒机器。
+用户登录后，监听进程订阅 macOS 网络配置变化和唤醒通知。登录、唤醒或网络变化时会合并短时间内的通知，再检查是否需要挂载。如果 DHCP 或网关缓存尚未就绪，会短暂补查。网络稳定时没有周期性定时检查。若仅 NAS 重启、网络始终没有变化，可用访达手动重连。旧版本用户再次运行新版安装命令即可升级。
 
 管理员配置文件为一行空格分隔的五个值，依次是 NAS IPv4、NAS 网卡地址、网关 IPv4、网关网卡地址、URL 编码的共享名。网卡地址使用本机 arp 的小写格式。该文件由管理员按公司网络单独分发。
 

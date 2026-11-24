@@ -39,8 +39,10 @@ iface=$(/sbin/route -n get "$HOST" 2>/dev/null | /usr/bin/awk '/interface:/{prin
 case "$iface" in en[0-9]*) ;; *) outside ;; esac
 if ! /sbin/ifconfig "$iface" 2>/dev/null | /usr/bin/grep -q 'status: active'; then outside; fi
 router=$(/usr/sbin/ipconfig getoption "$iface" router 2>/dev/null || true)
+if [ -z "$router" ]; then status waiting-for-network; exit 75; fi
 if [ "$router" != "$GATEWAY" ]; then outside; fi
 router_mac=$(/usr/sbin/arp -n -i "$iface" "$GATEWAY" 2>/dev/null | /usr/bin/awk '{print $4}')
+case "$router_mac" in ""|"(incomplete)"|entry) status waiting-for-network; exit 75 ;; esac
 if [ "$router_mac" != "$GATEWAY_MAC" ]; then outside; fi
 
 now=$(/bin/date +%s)
